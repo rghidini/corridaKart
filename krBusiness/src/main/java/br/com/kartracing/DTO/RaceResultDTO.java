@@ -13,6 +13,7 @@ public class RaceResultDTO implements Serializable{
 	private Integer lapsCompleted;
 	private LocalTime totalRaceTime;
 
+	public RaceResultDTO() {}
 	
 	public RaceResultDTO(Integer finalPosition, Long pilotId, String pilotName, Integer lapsCompleted,
 			LocalTime totalRaceTime) {

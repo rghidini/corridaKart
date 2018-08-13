@@ -2,46 +2,63 @@ package br.com.kartracing.service;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalTime;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Service;
 
 import br.com.kartracing.DTO.RaceRecordDTO;
 import br.com.kartracing.service.interfaces.IReadLogFile;
 
+@Service
 public class ReadLogFileService implements IReadLogFile{
-	
-	private static final String PATH = "C:\\tt.log";
+
 	private static final Integer FIRST = NumberUtils.INTEGER_ONE;
+	private static final Logger logger = Logger.getLogger(ReadLogFileService.class);
 
-	public void readLogFile() {
+	public List<RaceRecordDTO> readLogFile(String path) {
 
-		Path path = Paths.get(PATH);
+		List<RaceRecordDTO> raceRecord = new ArrayList<>();
 
 		try {
-			
-			Stream<RaceRecordDTO> map = Files.lines(path)
-			.skip(FIRST)
-			.map(line -> line.replaceAll("–", ""))
-			.map(line -> line.split("\\s+"))
-			.map(value -> new RaceRecordDTO(LocalTime.parse(value[0]), Long.parseLong(value[1]), 
-					value[2], Integer.parseInt(value[3]), 
-					LocalTime.parse(Integer.parseInt(value[4].substring(0, 1)) < 10 ? "00:0"+value[4] : "00:"+value[4]),
-					Double.parseDouble(value[5].replaceAll(",", "."))))
-			.sorted((a,b) -> Integer.compare(a.getLapTime().getNano(), b.getLapTime().getNano()))
-			.sorted((a,b) -> Integer.compare(a.getLapTime().getSecond(), b.getLapTime().getSecond()))
-			.sorted((a,b) -> Integer.compare(a.getLapTime().getMinute(), b.getLapTime().getMinute()))
-			.sorted((a,b) -> Integer.compare(a.getLaps(), b.getLaps()));
-			
-			map
-			.forEach(System.out::println);
-			
+
+			raceRecord = Files.lines(Paths.get(path))
+					.skip(FIRST)
+					.map(line -> line.replaceAll("–", ""))
+					.map(line -> line.split("\\s+"))
+					.map(value -> new RaceRecordDTO(LocalTime.parse(value[0]), Long.parseLong(value[1]), 
+							value[2], Integer.parseInt(value[3]),
+							getLocalTime(value[4]),
+							Double.parseDouble(value[5].replaceAll(",", "."))))
+					.sorted((a,b) -> Integer.compare(a.getLapTime().getNano(), b.getLapTime().getNano()))
+					.sorted((a,b) -> Integer.compare(a.getLapTime().getSecond(), b.getLapTime().getSecond()))
+					.sorted((a,b) -> Integer.compare(a.getLapTime().getMinute(), b.getLapTime().getMinute()))
+					.collect(Collectors.toList());
+
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error("An error occurred while reading the file. Message: " + e.getMessage());
 		}
+
+		return raceRecord;
+	}
+
+	private static LocalTime getLocalTime(String string) {
+		LocalTime time = LocalTime.MIN;
+
+		String[] split = string.split("[:.]");
+
+		if(split.length < 4) {
+			time = LocalTime.of(NumberUtils.INTEGER_ZERO, Integer.valueOf(split[0]), Integer.valueOf(split[1]), Integer.valueOf(split[2]));
+		} else {
+			time = LocalTime.of(Integer.valueOf(split[0]), Integer.valueOf(split[1]), Integer.valueOf(split[2]), Integer.valueOf(split[3]));
+		}
+
+		return time;
 	}
 
 }

@@ -24,6 +24,8 @@ public class RaceRecordDTO implements Serializable{
 		this.lapTime = lapTime;
 		this.averageLapSpeed = averageLapSpeed;
 	}
+	
+	public RaceRecordDTO() {}
 	/**
 	 * @return the hour
 	 */
